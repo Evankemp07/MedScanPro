@@ -55,10 +55,10 @@ The main purpose of writing this software was to give a real world example of ho
 
 # Future Work
 
-* **Error Handling: ** Enhance error management for API calls, file uploads, and database operations.
-* **Configuration Improvements: ** Replace hardcoded file paths (e.g., for `items.db` and `gudid_devices.db`) with configurable settings or environment variables.
-* **Security Enhancements: ** Implement additional validations and sanitizations for file uploads and user inputs to improve security.
-* **User Interface: ** Refine the UI for better usability and consider adding user authentication.
-* **Testing: ** Develop automated tests for scan processing, database lookups, and file export functionalities.
-* **Performance Optimization: ** Improve performance for handling large datasets and optimize database queries.
-* **WebSocket Integration: ** Explore further integration of Django Channels for real-time updates or notifications.
+* **Error Handling:** Enhance error management for API calls, file uploads, and database operations.
+* **Configuration Improvements:** Replace hardcoded file paths (e.g., for `items.db` and `gudid_devices.db`) with configurable settings or environment variables.
+* **Security Enhancements:** Implement additional validations and sanitizations for file uploads and user inputs to improve security.
+* **User Interface:** Refine the UI for better usability and consider adding user authentication.
+* **Testing:** Develop automated tests for scan processing, database lookups, and file export functionalities.
+* **Performance Optimization:** Improve performance for handling large datasets and optimize database queries.
+* **WebSocket Integration:** Explore further integration of Django Channels for real-time updates or notifications.
