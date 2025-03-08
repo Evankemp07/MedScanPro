@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Edit Scan - MedScanPro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .image-container {
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #2a2a2a;
+            border-radius: 10px;
+            border: 1px solid #444;
+            height: 100%;
+            width: 100%;
+            cursor: grab;
+        }
+        .image-container img {
+            max-width: 200px;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.2s ease-in-out;
+        }
+        .readonly-container {
+            background-color: #222;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .readonly-container label {
+            font-weight: bold;
+        }
+        .shelf-label {
+            max-width: 300px;
+            padding: 15px;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .shelf-label h4 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .shelf-label-content div {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            padding: 5px 0;
+        }
+
+        .shelf-label-content span {
+            white-space: nowrap;
+            overflow: hidden;
+            max-width: 100%;
+            display: inline-block;
+        }
+
+        .shelf-label-content strong {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .shelf-label-content .text-dark {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .shelf-label img {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .frame-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #2a2a2a;
+            border-radius: 10px;
+            border: 1px solid #444;
+            height: 300px;
+            width: 300px; 
+            overflow: hidden;
+            position: relative;
+        }
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        
+
+
+
+
+    </style>
+</head>
+<body class="bg-dark text-white">
+    <div class="container vh-100 d-flex justify-content-center align-items-center">
+        <div class="row w-100">
+            <!-- Left: Image Container (Frame for Image or Label) -->
+            <div class="col-md-4 d-flex flex-column align-items-center">
+                <div id="image-container" 
+                    class="frame-container position-relative text-center rounded shadow-lg p-3 border bg-white text-dark"
+                    style="width: 100%; height: 80%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+
+                    {% if form.instance.image %}
+                        <img id="preview-image" src="{{ form.instance.image.url }}" 
+                            alt="Scanned Image" class="rounded img-fluid" 
+                            style="display: block; max-height: 100%; width: 100%; cursor: grab; object-fit: contain; ">
+                    {% else %}
+                        <div id="shelf-label" class="shelf-label bg-white text-dark rounded shadow-lg p-3 text-center border">
+                            <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
+                                <img id="aztec-code" 
+                                    src="https://barcode.tec-it.com/barcode.ashx?data={{ form.instance.barcode|urlencode }}&code=Aztec&translate-esc=on&dpi=300" 
+                                    alt="Generated Aztec Code" 
+                                    class="img-fluid border rounded shadow" style="max-height: 90px;">
+
+                                <img id="latexIndicator" 
+                                    src="/media/nonlatex.png" 
+                                    alt="Does Not Contain Latex" 
+                                    class="img-fluid border rounded shadow" style="max-height: 90px;">
+
+                                <img id="hourglassIcon" 
+                                    src="/media/hourglass.png" 
+                                    alt="Expiring Soon" 
+                                    class="img-fluid border rounded shadow" 
+                                    style="max-height: 90px; display: none;">
+                            </div>
+
+                            <div class="shelf-label-content">
+                                <div class="d-flex justify-content-between align-items-center border-bottom py-1">
+                                    <strong class="text-muted">Brand:</strong>
+                                    <span id="labelBrand" class="text-dark fw-bold">{{ form.instance.brand_name|default:"Unknown" }}</span>
+                                </div>
+                            
+                                <div class="d-flex justify-content-between align-items-center border-bottom py-1">
+                                    <strong class="text-muted">Oracle #:</strong>
+                                    <span id="labelItemName" class="text-dark fw-bold">{{ form.instance.item_name|default:"N/A" }}</span>
+                                </div>
+                            
+                                <div class="d-flex justify-content-between align-items-center border-bottom py-1">
+                                    <strong class="text-muted">Item:</strong>
+                                    <span id="labelItemDesc" class="text-dark fw-bold">{{ form.instance.item_description|default:"No Description" }}</span>
+                                </div>
+                            
+                                <div class="text-center mt-3">
+                                    <span id="labelBarcode" class="fw-bold text-dark d-block mt-1">
+                                        {{ form.instance.barcode|default:"" }}
+                                    </span>
+                                </div>
+                            </div>                            
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if form.instance.image %}
+                    <button type="button" class="btn btn-secondary mt-2" onclick="rotateImage()">Rotate Image</button>
+                {% endif %}
+        
+                {% if form.instance.image %}
+                    <input type="range" id="zoom-slider" class="form-range mt-3 w-75" min="1" max="3" step="0.1" value="1">
+                {% endif %}
+            </div>
+
+
+
+            <!-- Middle: Editable Form -->
+            <div class="col-md-6">
+                <div class="card bg-secondary text-white shadow-lg p-4">
+                        <div class="position-absolute top-0 start-0 px-2 py-1 bg-dark rounded small">
+                            <small class="text-white">Scan Time:</small>
+                            <span class="text-white" style="font-size: 0.75rem;">
+                                {{ form.instance.scan_time|default:"N/A" }}
+                            </span>
+                        </div>
+                    <h2 class="text-center mb-3">Edit Scan</h2>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            {% for field in form %}
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ field.label }}</label>
+                                    {% if field.name in "expiration_date,labeled_contains_nrl" %}
+                                        <select name="{{ field.name }}" class="form-select">
+                                            <option value="True" {% if field.value in "True,1" %}selected{% endif %}>True</option>
+                                            <option value="False" {% if field.value in "False,0" %}selected{% endif %}>False</option>
+                                            <option value="Unknown" {% if field.value not in "True,False,1,0" %}selected{% endif %}>Unknown</option>
+                                        </select>
+                                    {% else %}
+                                        <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" 
+                                               class="form-control" value="{{ field.value|default_if_none:'' }}">
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3 mt-3">
+                            <label for="refNumber" class="form-label">Enter REF Number</label>
+                            <div class="input-group">
+                                <input type="text" id="refNumber" class="form-control" placeholder="Enter REF Number...">
+                                <button type="button" class="btn btn-primary" onclick="searchRef()">Update Fields</button>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4 gap-3">
+                            <a href="{% url 'scan_history' %}" class="btn btn-light flex-fill">Done</a>
+                            <a href="{% url 'scan_history' %}" class="btn btn-warning flex-fill">Cancel</a>
+                            <button type="button" class="btn btn-success flex-fill" onclick="saveChanges()">Save</button>
+                        </div>
+                    </form>
+                    <form method="POST" action="{% url 'delete_scan' form.instance.id %}" onsubmit="return confirm('Are you sure you want to delete this scan?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger flex-fill">Delete</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right: Read-Only GUDID Info -->
+            <div class="col-md-2">
+                <div class="readonly-container p-3 rounded shadow-lg">
+                    <h4 class="text-center">GUDID Information</h4>
+                    <label>Device ID(s):</label>
+                    <p id="deviceIdDisplay">Loading...</p>
+
+                    <label>Brand Name:</label>
+                    <p id="brandNameDisplay">Loading...</p>
+
+                    <label>Version/Model Number:</label>
+                    <p id="versionModelDisplay">Loading...</p>
+
+                    <label>Catalog Number:</label>
+                    <p id="catalogNumberDisplay">Loading...</p>
+
+                    <label>DI (Device Identifier):</label>
+                    <p id="diDisplay">Loading...</p>
+                    <button type="button" class="btn btn-info w-100" onclick="manualFetchGUDID()">Retry Fetch</button>
+                    <button type="button" class="btn btn-info w-100" onclick="updateFieldsFromGudid()">Update Fields from GUDID</button>
+                    <button type="button" class="btn btn-primary w-100" onclick="sendToPrintServer()">Print</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    let barcodeInput = document.querySelector("[name='barcode']");
+    if (barcodeInput && barcodeInput.value.trim().length > 5) {
+        fetchGUDIDData(barcodeInput.value.trim());
+    }
+});
+
+function fetchGUDIDData(barcodeValue) {
+    // Ensure barcode starts with "01"
+    if (!barcodeValue.startsWith("01")) {
+        barcodeValue = "01" + barcodeValue;
+    }
+
+    fetch(`https://accessgudid.nlm.nih.gov/api/v2/devices/lookup.json?udi=${encodeURIComponent(barcodeValue)}`)
+        .then(response => response.json())
+        .then(gudidData => {
+            let deviceIdList = Array.isArray(gudidData?.gudid?.device?.identifiers?.identifier) 
+                ? gudidData.gudid.device.identifiers.identifier.map(id => id.deviceId).join(", ") 
+                : "Not Available";
+            let brandName = gudidData?.gudid?.device?.brandName || "Not Available";
+            let versionModelNumber = gudidData?.gudid?.device?.versionModelNumber || "Not Available";
+            let catalogNumber = gudidData?.gudid?.device?.catalogNumber || "Not Available";
+            let deviceIdentifier = gudidData?.gudid?.device?.deviceIdentifier || "Not Available";
+
+            document.getElementById("deviceIdDisplay").textContent = deviceIdList;
+            document.getElementById("brandNameDisplay").textContent = brandName;
+            document.getElementById("versionModelDisplay").textContent = versionModelNumber;
+            document.getElementById("catalogNumberDisplay").textContent = catalogNumber;
+            document.getElementById("diDisplay").textContent = deviceIdentifier;
+
+            // Store full GUDID data globally
+            window.gudidData = gudidData;
+        })
+        .catch(error => {
+            console.error("Error fetching GUDID data:", error);
+        });
+}
+
+
+    function updateFieldsFromGudid() {
+        if (!window.gudidData) {
+            alert("No GUDID data available.");
+            return;
+        }
+
+        let invalidValues = ["Item not found", "Unknown", "None", "Description not available", "Needs manual entry"];
+
+        function shouldUpdateField(existingValue, newValue) {
+            return invalidValues.includes(existingValue) || !existingValue.trim();
+        }
+
+        let fieldMappings = {
+            "brand_name": window.gudidData?.gudid?.device?.brandName,
+            "device_description": window.gudidData?.gudid?.device?.deviceDescription,
+            "expiration_date": window.gudidData?.gudid?.device?.expirationDate ? "True" : "False",
+            "labeled_contains_nrl": window.gudidData?.gudid?.device?.labeledContainsNRL ? "True" : "False"
+        };
+
+        for (let field in fieldMappings) {
+            let fieldElement = document.querySelector(`[name='${field}']`);
+            if (fieldElement && shouldUpdateField(fieldElement.value, fieldMappings[field])) {
+                fieldElement.value = fieldMappings[field] || "";
+            }
+        }
+    }
+</script>
+
+
+<script>
+function searchRef() {
+    let refNumber = document.getElementById("refNumber").value;
+    let barcodeValue = document.querySelector("[name='barcode']").value; // Get barcode from the form
+
+    if (!refNumber) {
+        alert("Please enter a REF number!");
+        return;
+    }
+
+    fetch(`/search-ref/?ref=${encodeURIComponent(refNumber)}&barcode=${encodeURIComponent(barcodeValue)}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log("Search REF Response:", data);
+
+            if (data.success) {
+                function shouldUpdateField(existingValue, newValue) {
+                    let invalidValues = ["Item not found", "Unknown", "None", "Description not available", "Needs manual entry", "Item Not Found"];
+                    return invalidValues.includes(existingValue) || !existingValue.trim();
+                }
+                let fieldMappings = {
+                    "barcode": data.barcode,
+                    "brand_name": data.brand_name,
+                    "company_name": data.company_name,
+                    "device_description": data.device_description,
+                    "item_description": data.item_description,
+                    "expiration_date": data.expiration_date,
+                    "item_name": data.item_name,
+                    "labeled_contains_nrl": data.labeled_contains_nrl
+                };
+
+                for (let field in fieldMappings) {
+                    let fieldElement = document.querySelector(`[name='${field}']`);
+                    if (fieldElement && shouldUpdateField(fieldElement.value, fieldMappings[field])) {
+                        fieldElement.value = fieldMappings[field] || "";
+                        fieldElement.dispatchEvent(new Event("input")); // Force update event
+                    }
+                }
+
+
+                let versionModelField = document.querySelector("[name='version_model_number']");
+                if (versionModelField) {
+                    versionModelField.value = refNumber;
+                    versionModelField.dispatchEvent(new Event("input"));
+                }
+
+                updateShelfLabel();
+            }
+        })
+        .catch(error => {
+            console.error("Error searching REF:", error);
+        });
+}
+
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const img = document.getElementById("preview-image");
+    const shelfLabel = document.getElementById("shelf-label");
+    const zoomSlider = document.getElementById("zoom-slider");
+    const container = document.getElementById("image-container");
+
+    let scale = 1;
+    let isDragging = false;
+    let startX, startY, translateX = 0, translateY = 0;
+    let isUpdating = false;
+
+    function updateTransform() {
+        img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        zoomSlider.value = scale;
+        isUpdating = false;
+    }
+
+    function zoomAtCursor(event, zoomIn) {
+        if (!img || img.style.display === "none") return;
+
+        const rect = img.getBoundingClientRect();
+        const offsetX = event.clientX - rect.left;
+        const offsetY = event.clientY - rect.top;
+
+        const normX = (offsetX - rect.width / 2) / scale;
+        const normY = (offsetY - rect.height / 2) / scale;
+
+        const zoomFactor = zoomIn ? 1.1 : 0.9;
+        let newScale = scale * zoomFactor;
+        newScale = Math.max(1, Math.min(newScale, 3));
+
+        if (newScale !== scale) {
+            if (newScale < scale) {
+                translateX *= 0.6;
+                translateY *= 0.6;
+            } else {
+                translateX -= normX * (newScale - scale);
+                translateY -= normY * (newScale - scale);
+            }
+
+            scale = newScale;
+            zoomSlider.value = scale;
+
+            if (!isUpdating) {
+                isUpdating = true;
+                requestAnimationFrame(updateTransform);
+            }
+        }
+    }
+
+    container.addEventListener("wheel", (event) => {
+        event.preventDefault();
+        zoomAtCursor(event, event.deltaY < 0);
+    });
+
+    if (zoomSlider) {
+        zoomSlider.addEventListener("input", (event) => {
+            let newScale = parseFloat(event.target.value);
+            if (newScale < scale) {
+                translateX *= 0.6; 
+                translateY *= 0.6;
+            }
+            scale = newScale;
+            requestAnimationFrame(updateTransform);
+        });
+    }
+
+    container.addEventListener("mousedown", (e) => {
+        if (!img || img.style.display === "none") return;
+
+        isDragging = true;
+        startX = e.clientX - translateX;
+        startY = e.clientY - translateY;
+        container.style.cursor = "grabbing";
+    });
+
+    container.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        translateX = e.clientX - startX;
+        translateY = e.clientY - startY;
+        requestAnimationFrame(updateTransform);
+    });
+
+    container.addEventListener("mouseup", () => {
+        isDragging = false;
+        container.style.cursor = "grab";
+    });
+
+    container.addEventListener("mouseleave", () => {
+        isDragging = false;
+        container.style.cursor = "grab";
+    });
+
+    function toggleImageOrLabel() {
+        if (img && img.src.trim() !== "" && img.style.display !== "none") {
+            img.style.display = "block";
+            shelfLabel.style.display = "none";
+            if (zoomSlider) zoomSlider.style.display = "block";
+        } else {
+            img.style.display = "none";
+            shelfLabel.style.display = "flex";
+            if (zoomSlider) zoomSlider.style.display = "none";
+        }
+    }
+
+    toggleImageOrLabel();
+});
+
+
+</script>
+
+<script>
+    function saveChanges() {
+        let formData = new FormData(document.querySelector("form"));
+
+        fetch(window.location.href, {
+            method: "POST",
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.text();
+            } else {
+                throw new Error("Error saving changes");
+            }
+        })
+        .then(data => {
+            location.reload();
+        })
+        .catch(error => {
+            console.error("Save Error:", error);
+            alert("Failed to save changes. Please try again.");
+        });
+    }
+</script>
+    
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        updateShelfLabel();
+
+        document.querySelectorAll("[name='brand_name'], [name='expiration_date'], [name='item_name'], [name='item_description'], [name='barcode']").forEach(input => {
+            input.addEventListener("input", updateShelfLabel);
+        });
+    
+        toggleImageOrLabel();
+    });
+    
+
+
+
+    
+    function updateShelfLabel() {
+    document.getElementById("labelBrand").textContent = document.querySelector("[name='brand_name']").value || "Unknown";
+    document.getElementById("labelExpiration").textContent = document.querySelector("[name='expiration_date']").value || "Unknown";
+    document.getElementById("labelItemName").textContent = document.querySelector("[name='item_name']").value || "N/A";
+    document.getElementById("labelItemDesc").textContent = document.querySelector("[name='item_description']").value || "No Description";
+    document.getElementById("labelBarcode").textContent = document.querySelector("[name='barcode']").value || "";
+
+    // Update Aztec Barcode Image
+    let barcodeValue = document.querySelector("[name='barcode']").value;
+    let aztecImage = document.getElementById("aztec-code");
+
+    if (barcodeValue) {
+        aztecImage.src = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(barcodeValue)}&code=Aztec&translate-esc=on&dpi=300`;
+    } else {
+        aztecImage.src = "";
+    }
+}
+
+    </script>
+    
+    
+    
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        updateIndicators();
+
+        document.querySelector("[name='labeled_contains_nrl']").addEventListener("change", updateIndicators);
+        document.querySelector("[name='expiration_date']").addEventListener("change", updateIndicators);
+    });
+
+    function updateIndicators() {
+        let latexField = document.querySelector("[name='labeled_contains_nrl']");
+        let latexIndicator = document.getElementById("latexIndicator");
+        let expirationField = document.querySelector("[name='expiration_date']");
+        let hourglassIcon = document.getElementById("hourglassIcon");
+
+        // Update Latex Indicator
+        if (latexField && latexIndicator) {
+        if (latexField.value === "True") {
+            latexIndicator.src = "/media/latex.png";
+            latexIndicator.alt = "Contains Latex";
+            latexIndicator.style.display = "block";
+        } else if (latexField.value === "False") {
+            latexIndicator.src = "/media/nonlatex.png";
+            latexIndicator.alt = "Does Not Contain Latex";
+            latexIndicator.style.display = "block";
+        } else {
+            // Hide latexIndicator if value is invalid (not "True" or "False")
+            latexIndicator.style.display = "none";
+        }
+    }
+
+        // Show Hourglass if Expiration Date is "True"
+        if (expirationField && hourglassIcon) {
+            if (expirationField.value === "True") {
+                hourglassIcon.style.display = "block";
+            } else {
+                hourglassIcon.style.display = "none";
+            }
+        }
+    }
+</script>
+<script>
+    function sendToPrintServer() {
+        let formData = new FormData(document.querySelector("form"));
+        let jsonData = {};
+        formData.forEach((value, key) => {
+            jsonData[key] = value;
+        });
+    
+        let djangoUrl = "/send-to-printer/";
+    
+        fetch(djangoUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken(),
+            },
+            body: JSON.stringify(jsonData),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                alert("Print job sent successfully!");
+            } else {
+                alert("Error: " + data.error);
+            }
+        })
+        .catch(error => {
+            console.error("Print error:", error);
+            alert("Failed to send print job. Please check your server.");
+        });
+    }
+    
+
+    function getCSRFToken() {
+        let cookieValue = null;
+        let cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            if (cookie.startsWith("csrftoken=")) {
+                cookieValue = cookie.substring("csrftoken=".length, cookie.length);
+                break;
+            }
+        }
+        return cookieValue;
+    }
+
+
+    function manualFetchGUDID() {
+        let barcodeInput = document.querySelector("[name='barcode']").value.trim();
+        if (barcodeInput.length > 5) {
+            fetchGUDIDData(barcodeInput);
+        } else {
+            alert("Please enter a valid barcode.");
+        }
+    }
+
+    </script>
+    
+    

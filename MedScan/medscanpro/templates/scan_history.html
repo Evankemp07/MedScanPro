@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MedScanPro - Scan History</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: #ffffff;
+        }
+        .container {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .card {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            overflow: hidden;
+        }
+        .card-body {
+            flex-grow: 1;
+            overflow: auto;
+        }
+        .card-header {
+            background-color: #282828;
+            border-bottom: 1px solid #444;
+        }
+        .table {
+            color: #ffffff;
+        }
+        .table thead {
+            background-color: #333;
+        }
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: #222;
+        }
+        .table-striped tbody tr:nth-of-type(even) {
+            background-color: #1a1a1a;
+        }
+        .table-bordered td, .table-bordered th {
+            border: 1px solid #444;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #0056b3;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #a71d2a;
+        }
+        .btn-primary:hover, .btn-danger:hover {
+            opacity: 0.85;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            .card {
+                width: 100%;
+                height: auto;
+            }
+            .btn {
+                margin-bottom: 5px;
+            }
+            .hide-on-small {
+                display: none;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container-fluid px-3">
+        <div class="row justify-content-center">
+            <div class="card-header text-white text-center">
+                <h2>Scan History</h2>
+            </div>
+            <div class="card-body">
+                
+            <!-- Search Bar -->
+            <form method="GET" action="{% url 'scan_history' %}" class="mb-4" onsubmit="return handleSearchSubmit(event)">
+                <div class="input-group search-container">
+                    <input type="text" id="searchInput" name="q" class="form-control bg-dark text-white search-input" 
+                        placeholder="Search by any field..." value="{{ query }}" oninput="debounceFilter()" autofocus>
+                    <button type="submit" class="btn btn-primary search-btn">Search</button>
+                    <button type="button" class="btn btn-secondary clear-btn" onclick="clearSearch()" id="clearButton" style="display: none;">Clear</button>
+                </div>
+            </form>
+            
+            
+
+
+
+
+<!-- Buttons for large screens -->
+                <div class="d-none d-md-flex flex-wrap justify-content-between mb-3">
+                    <a href="{% url 'export_to_excel' %}" class="btn btn-primary">Export to Excel</a>
+                    <a href="/" class="btn btn-success">Scan Another</a>
+                    <button type="button" class="btn btn-secondary" onclick="searchManual()">Manual Entries</button>
+                    <button type="button" class="btn btn-secondary" onclick="searchNot()">Not Found in Item Master</button>
+                    <button type="button" class="btn btn-secondary" onclick="searchue()">Missing/Empty Info</button>
+                    <a href="{% url 'upload_page' %}" class="btn btn-outline-light">Update Item Master</a>
+                    <a href="{% url 'backup_list' %}" class="btn btn-info">View Backups</a>
+                    <a href="{% url 'clear_scan_history' %}" class="btn btn-danger" 
+                    onclick="return confirm('Are you sure you want to clear all scan history? This cannot be undone.');">
+                        Delete All Scans
+                    </a>
+                </div>
+                    <!-- Dropdown for small screens -->
+                    <div class="d-md-none mb-3">
+                        <div class="dropdown">
+                            <button class="btn btn-primary dropdown-toggle w-100" type="button" id="actionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Actions
+                            </button>
+                            <ul class="dropdown-menu w-100" aria-labelledby="actionsDropdown">
+                                <li><button class="dropdown-item" onclick="searchManual()">📝 Manual Entries</button></li>
+                                <li><button class="dropdown-item" onclick="searchNot()">❓ Not Found in Item Master</button></li>
+                                <li><button class="dropdown-item" onclick="searchue()">⚠️ Missing/Empty Info</button></li>
+                                <li><a class="dropdown-item" href="{% url 'export_to_excel' %}">📄 Export to Excel</a></li>
+                                <li><a class="dropdown-item" href="{% url 'backup_list' %}">📂 View Backups</a></li>
+                                <li><a class="dropdown-item" href="{% url 'upload_page' %}">📥 Update Database</a></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{% url 'clear_scan_history' %}" 
+                                    onclick="return confirm('Are you sure you want to clear all scan history? This cannot be undone.');">
+                                        🗑️ Clear All Data
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="mt-2">
+                            <a href="/" class="btn btn-success w-100">🔄 Scan Another</a>
+                        </div>
+                    </div>
+
+                <!-- Scan History Table -->
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Scan Time</th>
+                                <th>Barcode</th>
+                                <th class="hide-on-small">Brand Name</th>
+                                <th class="hide-on-small">Company Name</th>
+                                <th class="hide-on-small">Device Description</th>
+                                <th class="hide-on-small">Item Description</th>
+                                <th class="hide-on-small">Version/Model Number</th>
+                                <th class="hide-on-small">Item Name</th>
+                                <th class="hide-on-small">Labeled Contains NRL</th>
+                                <th class="text-center bg-primary text-white">Total Scans: {{ scans.count }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for scan in scans %}
+                            <tr>
+                                <td>{{ scan.scan_time }}</td>
+                                <td title="{{ scan.barcode }}">
+                                    {{ scan.barcode|slice:":6" }}...{{ scan.barcode|slice:"-6:" }}
+                                    <button class="btn btn-secondary btn-sm ms-2" onclick="copyToClipboard('{{ scan.barcode }}')">Copy</button>
+                                </td>
+                                <td class="hide-on-small">{{ scan.brand_name }}</td>
+                                <td class="hide-on-small">{{ scan.company_name }}</td>
+                                <td class="hide-on-small">{{ scan.device_description }}</td>
+                                <td class="hide-on-small">{{ scan.item_description }}</td>
+                                <td class="hide-on-small">{{ scan.version_model_number }}</td>
+                                <td class="hide-on-small">{{ scan.item_name }}</td>
+                                <td class="hide-on-small">{{ scan.labeled_contains_nrl }}</td>
+                                <td>
+                                    <a href="{% url 'edit_scan' scan.id %}" class="btn btn-warning btn-sm">Edit</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="11" class="text-center text-danger">No scans found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>                                               
+                    </table>
+                </div>                
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Barcode copied: " + text);
+            }).catch(err => {
+                console.error("Error copying text: ", err);
+            });
+        }
+        </script>        
+    <script>
+        function searchManual() {
+            let searchInput = document.querySelector("[name='q']");
+            if (searchInput) {
+                searchInput.value = "manual";
+                searchInput.form.submit();
+            }
+        }
+        </script>
+
+    <script>
+        function searchNot() {
+            let searchInput = document.querySelector("[name='q']");
+            if (searchInput) {
+                searchInput.value = "Not Found";
+                searchInput.form.submit();
+            }
+        }
+        </script>
+
+    <script>
+        function searchue() {
+            let searchInput = document.querySelector("[name='q']");
+            if (searchInput) {
+                searchInput.value = "Unknown";
+                searchInput.form.submit();
+            }
+        }
+        </script>
+
+<script>
+    let debounceTimer;
+
+    function debounceFilter() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            filterTable();
+        }, 1000);
+        toggleClearButton();
+    }
+
+    function filterTable() {
+        let searchTerm = document.getElementById("searchInput").value.toLowerCase();
+        let tableRows = document.querySelectorAll("tbody tr");
+
+        tableRows.forEach(row => {
+            let text = row.innerText.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? "" : "none";
+        });
+    }
+
+    function handleSearchSubmit(event) {
+        let searchTerm = document.getElementById("searchInput").value.trim();
+        if (searchTerm === "") {
+            event.preventDefault();
+        }
+    }
+
+    function clearSearch() {
+        window.location.href = "{% url 'scan_history' %}";
+    }
+
+    function toggleClearButton() {
+        let searchInput = document.getElementById("searchInput");
+        let clearButton = document.getElementById("clearButton");
+        clearButton.style.display = searchInput.value ? "inline-block" : "none";
+    }
+
+    document.addEventListener("DOMContentLoaded", toggleClearButton);
+</script>
+
+</body>
+</html>
