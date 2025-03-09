@@ -359,9 +359,7 @@ def capture_image(request):
         return redirect('scan_page')
     return redirect('scan_page')
 
-def uploading_page(request):
-    """Displays the uploading screen while the image is being processed."""
-    return render(request, 'uploading.html')
+
 
 def add_placeholder_scan(request, action):
     """
